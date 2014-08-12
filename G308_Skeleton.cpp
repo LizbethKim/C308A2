@@ -108,47 +108,45 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 	if (root == NULL) {
 		return;
 	}
-	std::cout << "Meow dot text" << endl;
 	glPushMatrix();
 	glRotatef(-90, root->rotx, root->roty, root->rotz);
-		glColor3f(0, 1, 1);
-		glutSolidSphere(2.0, 100, 100);
-		glTranslatef(root->dirx, root->diry, root->dirz);
+		// glColor3f(0, 1, 1);
+		// glutSolidSphere(2.0, 100, 100);
 
-		glPushMatrix();
-			glColor3f(0,0,1);
-			gluCylinder(q, 0.5, 0.5, 15, 100, 100);
-			glTranslatef(0,0,15);
-			glutSolidCone(1.0,1.0,100,100);
-		glPopMatrix();
+		// glPushMatrix();
+		// 	glColor3f(0,0,1);
+		// 	gluCylinder(q, 0.5, 0.5, 15, 100, 100);
+		// 	glTranslatef(0,0,15);
+		// 	glutSolidCone(1.0,1.0,100,100);
+		// glPopMatrix();
 
-		glPushMatrix();
-			glColor3f(0,1,0);
-			glRotatef(-90,1,0,0);
-			gluCylinder(q, 0.5, 0.5, 15, 100, 100);
-		glPopMatrix();
+		// glPushMatrix();
+		// 	glColor3f(0,1,0);
+		// 	glRotatef(-90,1,0,0);
+		// 	gluCylinder(q, 0.5, 0.5, 15, 100, 100);
+		// glPopMatrix();
 
-		glPushMatrix();
-			glColor3f(1,0,0);
-			glRotatef(-90, 0, 1, 0);
-			gluCylinder(q, 0.5, 0.5, 15, 100, 100);
-		glPopMatrix();
+		// glPushMatrix();
+		// 	glColor3f(1,0,0);
+		// 	glRotatef(-90, 0, 1, 0);
+		// 	gluCylinder(q, 0.5, 0.5, 15, 100, 100);
+		// glPopMatrix();
 
-		glPushMatrix();
-			glColor3f(0.8, 0.8, 0.8);
-			glRotatef(-45, 1, 1, 0);
-			gluCylinder(q, 1.5, 0.3, 30, 100, 100);
-		glPopMatrix();
+		// glPushMatrix();
+		// 	glColor3f(0.8, 0.8, 0.8);
+		// 	glRotatef(-45, 1, 1, 0);
+		// 	gluCylinder(q, 1.5, 0.3, 30, 100, 100);
+		// glPopMatrix();
 
-		cout << root->length << endl;
 
 		glPushMatrix();
 			glColor3f(0.2,0.5,0.7);
 			glRotatef(-90, root->dirx, root->diry, root->dirz);
-			gluCylinder(q, 1, 1, root->length, 100, 100);
+			gluCylinder(q, 0.2, 0.2, root->length, 50, 50);
 		glPopMatrix();
 	glPopMatrix();
 
+	glTranslatef(root->dirx*root->length, root->diry*root->length, root->dirz*root->length);
 	int i;
 	for (i = 0; i < root->numChildren; i++){
 		display(root->children[i], q);
