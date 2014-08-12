@@ -113,6 +113,7 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 	glRotatef(-90, root->rotx, root->roty, root->rotz);
 		glColor3f(0, 1, 1);
 		glutSolidSphere(2.0, 100, 100);
+		glTranslatef(root->dirx, root->diry, root->dirz);
 
 		glPushMatrix();
 			glColor3f(0,0,1);
@@ -138,14 +139,22 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 			glRotatef(-45, 1, 1, 0);
 			gluCylinder(q, 1.5, 0.3, 30, 100, 100);
 		glPopMatrix();
+
+		cout << root->length << endl;
+
+		glPushMatrix();
+			glColor3f(0.2,0.5,0.7);
+			glRotatef(-90, root->dirx, root->diry, root->dirz);
+			gluCylinder(q, 1, 1, root->length, 100, 100);
+		glPopMatrix();
 	glPopMatrix();
 
-	glPushMatrix();
-		glColor3f(1,1,1);
-		glRotatef(-90, root->dirx, root->diry, root->dirz);
-		gluCylinder(q, 1, 1, root->length, 100, 100);
-		glTranslatef(root->dirx, root->diry, root->dirz);
-	glPopMatrix();
+	int i;
+	for (i = 0; i < root->numChildren; i++){
+		display(root->children[i], q);
+	}
+
+
 }
 
 bool Skeleton::readASF(char* filename) {
