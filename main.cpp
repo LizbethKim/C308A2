@@ -20,6 +20,7 @@
 #include <GL/glut.h>
 #include "define.h"
 #include "G308_Skeleton.h"
+#include <iostream>
 
 GLuint g_mainWnd;
 GLuint g_nWinWidth = G308_WIN_WIDTH;
@@ -31,6 +32,11 @@ void G308_display();
 void G308_init();
 void G308_SetCamera();
 void G308_SetLight();
+void G308_mouseListener(int, int, int, int);
+void G308_motionListener(int, int);
+int lastX = 0, lastY = 0, curX = 0, curY = 0;
+int arcball = false;
+int maxY = 0;
 
 Skeleton* skeleton;
 
@@ -47,6 +53,8 @@ int main(int argc, char** argv) {
 	g_mainWnd = glutCreateWindow("COMP308 Assignment2");
 
 	glutKeyboardFunc(G308_keyboardListener);
+	glutMouseFunc(G308_mouseListener);
+	glutMotionFunc(G308_motionListener);
 	glutDisplayFunc(G308_display);
 	glutReshapeFunc(G308_Reshape);
 
@@ -54,7 +62,13 @@ int main(int argc, char** argv) {
 
 	// [Assignment2] : Read ASF file
 	skeleton = new Skeleton(argv[1]);
+	if (argc == 3){
+		skeleton->readACM(argv[2]);
+	}
+	skeleton->renderState(1);
 
+	cout << "Gets to here\n" << endl;
+	cout << flush;
 	glutMainLoop();
 
 	return EXIT_SUCCESS;
@@ -95,7 +109,57 @@ void G308_display() {
 }
 
 void G308_keyboardListener(unsigned char key, int x, int y) {
-	//Code to respond to key events
+	switch (key){
+		case 'a': glRotatef(-5, 0, 1, 0);
+		break;
+		case 'd': glRotatef(5, 0, 1, 0);
+		break;
+		case 'w': glRotatef(-5, 1, 0, 0);
+		break;
+		case 's': glRotatef(5, 1, 0, 0);
+		break;
+		case '1': skeleton->renderState(1);
+		break;
+		case '2': skeleton->renderState(2);
+		break;
+		case '3': skeleton->renderState(3);
+		break;
+	}
+	G308_display();
+}
+
+void G308_mouseListener(int button, int state, int x, int y){
+	//0 = Left GLUT_LEFT_BUTTON
+	//1 = Middle GLUT_MIDDLE_BUTTON
+	//2 = Right GLUT_RIGHT_BUTTON
+	//3 = MouseUp GLUT_SOMETHING
+	//4 = MouseDown GLUT_SOMETHINGELSE
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN){
+		arcball = true;
+		lastX = curX = x;
+		lastY = curY = y;
+	} else {
+		arcball = false;
+	}
+}
+
+void G308_motionListener(int x, int y){
+	if (arcball){
+		curX = x;
+		curY = y;
+		glRotatef((curX-lastX), 0, 1, 0);
+		if (maxY > -180 && maxY < 180){
+			glRotatef((curY-lastY), 1, 0, 0);
+		}
+
+
+		if ((maxY + (curY-lastY)) < 200 && (maxY + (curY-lastY)) > (-200)){
+			maxY += (curY-lastY);
+		}
+		lastY = curY;
+		lastX = curX;
+		glutPostRedisplay();
+	}
 }
 
 // Reshape function

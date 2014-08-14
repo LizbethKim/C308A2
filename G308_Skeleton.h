@@ -61,16 +61,21 @@ private:
 	void deleteBones(bone*);
 	void readBone(char*, FILE*);
 	void readHierarchy(char*, FILE*);
+	void readACMHeading(FILE*, int);
 	void display(bone*, GLUquadric*);
 	DOF dofFromString(char*);
 
 public:
 	int numBones;
+	int rS;
+	float*** animRot;
 	float angle;
 	Skeleton(char*);
 	~Skeleton();
 	void display();
 	void readAMC(FILE*,int*);
+	bool readACM(char*);
+	void renderState(int);
 };
 
 #endif

@@ -79,6 +79,10 @@ void Skeleton::deleteBones(bone* root) {
 	free(root);
 }
 
+void Skeleton::renderState(int x){
+	rS = x;
+}
+
 // [Assignment2] you may need to revise this function
 void Skeleton::display() {
 	if (root == NULL) {
@@ -108,52 +112,53 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 	if (root == NULL) {
 		return;
 	}
-	glPushMatrix();
-	glRotatef(-90, root->rotx, root->roty, root->rotz);
-		// glColor3f(0, 1, 1);
-		// glutSolidSphere(2.0, 100, 100);
-
-		// glPushMatrix();
-		// 	glColor3f(0,0,1);
-		// 	gluCylinder(q, 0.5, 0.5, 15, 100, 100);
-		// 	glTranslatef(0,0,15);
-		// 	glutSolidCone(1.0,1.0,100,100);
-		// glPopMatrix();
-
-		// glPushMatrix();
-		// 	glColor3f(0,1,0);
-		// 	glRotatef(-90,1,0,0);
-		// 	gluCylinder(q, 0.5, 0.5, 15, 100, 100);
-		// glPopMatrix();
-
-		// glPushMatrix();
-		// 	glColor3f(1,0,0);
-		// 	glRotatef(-90, 0, 1, 0);
-		// 	gluCylinder(q, 0.5, 0.5, 15, 100, 100);
-		// glPopMatrix();
-
-		// glPushMatrix();
-		// 	glColor3f(0.8, 0.8, 0.8);
-		// 	glRotatef(-45, 1, 1, 0);
-		// 	gluCylinder(q, 1.5, 0.3, 30, 100, 100);
-		// glPopMatrix();
-
-
+	float theta = acos(root->dirz) * 180 / M_PI;
+	if (rS < 4){
 		glPushMatrix();
-			glColor3f(0.2,0.5,0.7);
-			glRotatef(-90, root->dirx, root->diry, root->dirz);
-			gluCylinder(q, 0.2, 0.2, root->length, 50, 50);
-		glPopMatrix();
-	glPopMatrix();
+		if (rS < 3){
+			glRotatef(theta, -root->diry, root->dirx, 0);
+			glColor3f(0, 1, 1);
+			glutSolidSphere(0.4, 100, 100);
+			if (rS < 2){
+				glPushMatrix();
+					glColor3f(0,0,1);
+					gluCylinder(q, 0.1, 0.1, 1, 100, 100);
+					glutSolidCone(0.2,0.2,100,100);
+				glPopMatrix();
 
-	glTranslatef(root->dirx*root->length, root->diry*root->length, root->dirz*root->length);
-	int i;
-	for (i = 0; i < root->numChildren; i++){
-		display(root->children[i], q);
+				glPushMatrix();
+					glColor3f(0,1,0);
+					glRotatef(-90,1,0,0);
+					gluCylinder(q, 0.1, 0.1, 1, 100, 100);
+				glPopMatrix();
+
+				glPushMatrix();
+					glColor3f(1,0,0);
+					glRotatef(-90, 0, 1, 0);
+					gluCylinder(q, 0.1, 0.1, 1, 100, 100);
+				glPopMatrix();
+				glRotatef(-theta, -root->diry, root->dirx, 0);
+			}
+		}
+		glPopMatrix();
 	}
 
+		glPushMatrix();
+			theta = acos(root->dirz) * 180 / M_PI;
+			glRotatef(theta, -root->diry, root->dirx, 0);
+			glColor3f(1,1,1);
+			gluCylinder(q, 0.2, 0.2, root->length, 50, 50);
+			glRotatef(-theta, -root->diry, root->dirx, 0);
 
+			glTranslatef(root->dirx*root->length, root->diry*root->length, root->dirz*root->length);
+			int i;
+			for (i = 0; i < root->numChildren; i++){
+				display(root->children[i], q);
+			}
+		glPopMatrix();
 }
+
+
 
 bool Skeleton::readASF(char* filename) {
 	FILE* file = fopen(filename, "r");
@@ -190,6 +195,96 @@ bool Skeleton::readASF(char* filename) {
 	fclose(file);
 	printf("Completed reading skeleton file\n");
 	return true;
+}
+
+bool Skeleton::readACM(char* filename){
+	FILE* file = fopen(filename, "r");
+	buffSize = 200;
+	if (file == NULL){
+		printf("STOP BEING A MISERABLE FAILURE AND PUT IN A VALID ACM FILE %s\n", filename);
+		exit(EXIT_FAILURE);
+	}
+
+	char* buff = new char[buffSize];
+	char *p;
+	int frame = 0;
+
+	printf("Starting reading acm file\n");
+	while ((p = fgets(buff, buffSize, file)) != NULL){
+		char* start = buff;
+		trim(&start);
+
+		if (buff[0] == '#' || buff[0] == '\0' || buff[0] == ':'){
+			continue;
+		}
+
+		if(sscanf(start, "%d\b", &frame)){}
+	}
+	printf("%d\n", frame);
+	if (fseek(file, 0L, SEEK_SET ) == 0){
+		animRot = (float***)malloc(sizeof(float*)*frame);
+		if (animRot == NULL){
+			printf("Memory Allocation FAILED");
+		}
+		readACMHeading(file, frame);
+	} else {
+		printf("Return to start of file failed\n");
+		return false;
+	}
+	return true;
+}
+
+void Skeleton::readACMHeading(FILE* file, int frame){
+	int i, j, q;
+	float v1, v2, v3, v4, v5, v6;
+	char* name = new char[buffSize];
+	char* temp = new char[buffSize];
+	char* line;
+	while ((line = fgets(temp, buffSize, file))){
+ 		if (*line == ':') continue;
+		if (*line == '#') continue;
+		if (line == NULL) {
+			printf("Some serious shit going on here\n");
+			break;
+		}
+		for (i = 0; i < frame; i++){
+			*(animRot + i) = (float**)malloc(sizeof(float*) *29);
+			line = fgets(temp, buffSize, file);
+			printf("Dis is the line %s\n", line);
+			for (j = 0; j < 29; j++){
+		 		line = fgets(temp, buffSize, file);
+		 		printf("Proper line %s", line);
+				*(*(animRot + i) + j) = (float*)malloc(sizeof(float) *6);
+				int num = sscanf(line, "%s %f %f %f %f %f %f", name, &v1, &v2, &v3, &v4, &v5, &v6);
+				switch(num){
+					case 7: *(*(*(animRot + i) + j)+0) = v4;
+					*(*(*(animRot + i) + j)+1) = v5;
+					*(*(*(animRot + i) + j)+2) = v6;
+					*(*(*(animRot + i) + j)+3) = v1;
+					*(*(*(animRot + i) + j)+4) = v2;
+					*(*(*(animRot + i) + j)+5) = v3;
+					printf("7\n");
+					break;
+					case 4: *(*(*(animRot + i) + j)+0) = v1;
+					*(*(*(animRot + i) + j)+1) = v2;
+					*(*(*(animRot + i) + j)+2) = v3;
+					printf("4\n");
+					break;
+					case 3: *(*(*(animRot + i) + j)+0) = v1;
+					*(*(*(animRot + i) + j)+1) = v2;
+					printf("3\n");
+					break;
+					case 2: *(*(*(animRot + i) + j)+0) = v1;
+					printf("2\n");
+					break;
+					default: printf("This shit is going seriously wrong %d %s\n", num, name);
+					break;
+				}
+				printf("i = %d, j = %d, q = %d\n", i, j, q);
+			}
+			q++;
+		}
+	}
 }
 
 /**
