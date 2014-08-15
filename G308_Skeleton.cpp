@@ -24,7 +24,7 @@
 #include <cmath>
 #include <unistd.h>
 
-#define malloc_crash(x) if(!x){ printf("could not malloc at %d\n", __LINE__ -1); exit 1; }
+#define malloc_crash(x) if(!x){ printf("could not malloc at %d\n", __LINE__ -1); exit(1); }
 
 
 
@@ -117,8 +117,7 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 		return;
 	}
 	float theta = acos(root->dirz) * 180 / M_PI;
-	if (rS < 4){
-		
+	if (rS < 4){		
 		glPushMatrix();
 		
 		glRotatef(root->rotz, 0, 0, 1.0);
@@ -176,7 +175,9 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 	glPopMatrix();
 }
 
-
+void Skeleton::poseStateSet(int x){
+	poseState = x;
+}
 
 bool Skeleton::readASF(char* filename) {
 	FILE* file = fopen(filename, "r");
@@ -251,30 +252,252 @@ int Skeleton::readACM(char* filename){
 	return frame;
 }
 
-void Skeleton::animate(int i){
-	animDisplay(root, i);
+void Skeleton::animate(int i, int mode){
+	animDisplay(root, i, mode);
 	glutPostRedisplay();
 }
 
-void Skeleton::animDisplay(bone* root, int currFrame) {
+void Skeleton::animDisplay(bone* root, int currFrame, int mode) {
 	if (root == NULL) {
 		return;
 	}
-	float transX = animRot[currFrame][0][3];
-	float transY = animRot[currFrame][0][4];
-	float transZ = animRot[currFrame][0][5];
+	if (mode == 0){
+		float transX = animRot[currFrame][0][3];
+		float transY = animRot[currFrame][0][4];
+		float transZ = animRot[currFrame][0][5];
 
-	int i;
+		int i;
 
-	root[0].currentTranslatex = transX;
-	root[0].currentTranslatey = transY;
-	root[0].currentTranslatez = transZ;
-	for (i = 0; i < 29; i++){
-		if (animRot[currFrame][i] == NULL) continue;
-		root[i].currentRotationx = animRot[currFrame][i][0];
-		root[i].currentRotationy = animRot[currFrame][i][1];
-		root[i].currentRotationz = animRot[currFrame][i][2];
+		root[0].currentTranslatex = transX;
+		root[0].currentTranslatey = transY;
+		root[0].currentTranslatez = transZ;
+		for (i = 0; i < 29; i++){
+			if (animRot[currFrame][i] == NULL) continue;
+			root[i].currentRotationx = animRot[currFrame][i][0];
+			root[i].currentRotationy = animRot[currFrame][i][1];
+			root[i].currentRotationz = animRot[currFrame][i][2];
+		}
+	} else if (mode == 1){
+		float transX = animPose[0][3];
+		float transY = animPose[0][4];
+		float transZ = animPose[0][5];
+
+		int i;
+
+		root[0].currentTranslatex = transX;
+		root[0].currentTranslatey = transY;
+		root[0].currentTranslatez = transZ;
+		for (i = 0; i < 29; i++){
+			if (animRot[currFrame][i] == NULL) continue;
+			root[i].currentRotationx = animPose[i][0];
+			root[i].currentRotationy = animPose[i][1];
+			root[i].currentRotationz = animPose[i][2];
+		}
 	}
+}
+
+void Skeleton::pose(int pose){
+	char const* poseFile[29];
+	int j, df;
+	float v1, v2, v3, v4, v5, v6;
+	char name[200];
+	switch (pose){
+		case 0:
+		poseFile[0] = "root -0.00368816 16.2109 0.900333 -7.83816 17.0395 -3.03423";
+		poseFile[1] = "lowerback 11.9247 3.68627 -1.94793";
+		poseFile[2] = "upperback 3.60027 4.79134 2.81308";
+		poseFile[3] = "thorax -3.29766 2.39669 3.31961";
+		poseFile[4] = "lowerneck -20.7899 0.64661 3.67078";
+		poseFile[5] = "upperneck 33.7031 0.737089 -2.64472";
+		poseFile[6] = "head 15.3296 0.481401 -1.59538";
+		poseFile[7] = "rclavicle 1.61016e-014 -2.72335e-014";
+		poseFile[8] = "rhumerus 64.8893 36.0376 -51.268";
+		poseFile[9] = "rradius 51.5009";
+		poseFile[10] = "rwrist -8.04063";
+		poseFile[11] = "rhand -9.68608 28.7397";
+		poseFile[12] = "rfingers 7.12502";
+		poseFile[13] = "rthumb 16.2859 -0.596351";
+		poseFile[14] = "lclavicle 1.61016e-014 -2.72335e-014";
+		poseFile[15] = "lhumerus 38.5572 -11.7359 52.3875";
+		poseFile[16] = "lradius 47.3848";
+		poseFile[17] = "lwrist -9.66758";
+		poseFile[18] = "lhand -22.0274 18.9423";
+		poseFile[19] = "lfingers 7.12502";
+		poseFile[20] = "lthumb 4.38227 48.877";
+		poseFile[21] = "rfemur 44.4261 -145.848 -86.3876";
+		poseFile[22] = "rtibia 36.1183";
+		poseFile[23] = "rfoot -112.459 -132.107";
+		poseFile[24] = "rtoes 56.4287";
+		poseFile[25] = "lfemur -27.9 6.43214 -25.952";
+		poseFile[26] = "ltibia 55.3268";
+		poseFile[27] = "lfoot -9.01973 4.86985";
+		poseFile[28] = "ltoes 4.53009";
+		break;
+		case 1:
+		poseFile[0] = "root 7.46979 15.9909 -36.6099 6.97364 1.17677 -3.42769";
+		poseFile[1] = "lowerback -4.02947 0.124717 0.686617";
+		poseFile[2] = "upperback -1.74341 0.122466 2.40941";
+		poseFile[3] = "thorax 0.46583 0.0663449 2.09235";
+		poseFile[4] = "lowerneck -18.3092 -4.94712 -12.866";
+		poseFile[5] = "upperneck 13.9808 -6.45508 16.5981";
+		poseFile[6] = "head 8.36631 -2.21315 7.00226";
+		poseFile[7] = "rclavicle 9.405e-015 1.19271e-015";
+		poseFile[8] = "rhumerus -39.2962 17.4621 -84.4896";
+		poseFile[9] = "rradius 56.9177";
+		poseFile[10] = "rwrist -29.7836";
+		poseFile[11] = "rhand -32.5089 -26.7042";
+		poseFile[12] = "rfingers 7.12502";
+		poseFile[13] = "rthumb -5.7401 -56.6064";
+		poseFile[14] = "lclavicle 9.405e-015 1.19271e-015";
+		poseFile[15] = "lhumerus -36.6135 -3.05608 86.2016";
+		poseFile[16] = "lradius 27.605";
+		poseFile[17] = "lwrist 7.3759";
+		poseFile[18] = "lhand -13.2527 -23.6778";
+		poseFile[19] = "lfingers 7.12502";
+		poseFile[20] = "lthumb 12.8496 5.90672";
+		poseFile[21] = "rfemur -9.10523 4.99331 29.8867";
+		poseFile[22] = "rtibia 23.7929";
+		poseFile[23] = "rfoot 0 0";
+		poseFile[24] = "rtoes 0";
+		poseFile[25] = "lfemur -40.6314 5.96489 -16.4186";
+		poseFile[26] = "ltibia 41.7651";
+		poseFile[27] = "lfoot -14.4396 7.79462";
+		poseFile[28] = "ltoes -11.6514";
+		break;
+		case 2:
+		poseFile[0] = "root 0.129681 15.655 -6.34388 338.531 -27.0544 -358.348";
+		poseFile[1] = "lowerback 24.0774 1.59426 -1.73394";
+		poseFile[2] = "upperback 12.9197 1.36177 -0.772827";
+		poseFile[3] = "thorax 0.804141 0.483394 -0.155251";
+		poseFile[4] = "lowerneck -6.99849 0.73177 -6.39631";
+		poseFile[5] = "upperneck 9.52563 1.36264 3.0843";
+		poseFile[6] = "head 3.92502 0.601811 2.05643";
+		poseFile[7] = "rclavicle -2.56432e-014 -5.1684e-015";
+		poseFile[8] = "rhumerus -37.9902 76.0358 -79.4384";
+		poseFile[9] = "rradius 89.1912";
+		poseFile[10] = "rwrist 40.5623";
+		poseFile[11] = "rhand -51.4538 33.6299";
+		poseFile[12] = "rfingers 7.12502";
+		poseFile[13] = "rthumb -23.9839 5.10817";
+		poseFile[14] = "lclavicle -2.56432e-014 -5.1684e-015";
+		poseFile[15] = "lhumerus -18.8041 -81.9355 61.3737";
+		poseFile[16] = "lradius 84.1348";
+		poseFile[17] = "lwrist -23.877";
+		poseFile[18] = "lhand -39.2768 10.1551";
+		poseFile[19] = "lfingers 7.12502";
+		poseFile[20] = "lthumb -12.2706 39.7751";
+		poseFile[21] = "rfemur -38.039 -6.21629 4.50249";
+		poseFile[22] = "rtibia 78.3629";
+		poseFile[23] = "rfoot 5.94074 -2.3791";
+		poseFile[24] = "rtoes -4.19363";
+		poseFile[25] = "lfemur -35.1821 7.9344 -8.70375";
+		poseFile[26] = "ltibia 71.9979";
+		poseFile[27] = "lfoot 10.0395 -10.6905";
+		poseFile[28] = "ltoes -4.94233";
+		break;
+	}
+	animPose = (float**)malloc(sizeof(float*) *32);
+	for (j = 0; j < 29; j++){
+		char const* poseLine = poseFile[j];
+		int num = sscanf(poseLine, "%s %f %f %f %f %f %f", name, &v1, &v2, &v3, &v4, &v5, &v6);
+
+		int bone = 0;
+		for (bone = 0; strcmp(root[bone].name, name); bone++){}
+		df = (root[bone].dof&DOF_RX);
+		df += (root[bone].dof&DOF_RY);
+		df += (root[bone].dof&DOF_RZ);
+		df += (root[bone].dof&DOF_ROOT);
+		// cout << "Bone = " << root[bone].name << " " << name << " df = " << df << " " << num << endl;
+		*(animPose + bone) = (float*)malloc(sizeof(float) *10);
+		malloc_crash(*(animPose + bone));
+
+		switch(num){
+			case 7: *(*(animPose + bone)+0) = v4;
+				*(*(animPose + bone)+1) = v5;
+				*(*(animPose + bone)+2) = v6;
+				*(*(animPose + bone)+3) = v1;
+				*(*(animPose + bone)+4) = v2;
+				*(*(animPose + bone)+5) = v3;
+			// cout << "X Y Z TX TY TZ " << v4 << " " << v5 << " " << v6 << " " << v1 << " " << v2 << " " << v3 << endl;
+			break;
+			case 4: *(*(animPose+ bone)+0) = v1;
+				*(*(animPose + bone)+1) = v2;
+				*(*(animPose + bone)+2) = v3;
+				*(*(animPose + bone)+3) = 0;
+				*(*(animPose + bone)+4) = 0;
+				*(*(animPose + bone)+5) = 0;
+			// cout << "X Y Z " << v1 << " " << v2 << " " << v3 << endl;
+			break;
+			case 3: 
+			if (df == 3){
+				*(*(animPose + bone)+0) = v1;
+				*(*(animPose + bone)+1) = v2;
+				*(*(animPose + bone)+2) = 0;
+				*(*(animPose + bone)+3) = 0;
+				*(*(animPose + bone)+4) = 0;
+				*(*(animPose + bone)+5) = 0;
+				// cout << "X Y Z " << v1 << " " << v2 << " " << 0 << endl;
+			} else if (df == 5){
+				*(*(animPose + bone)+0) = v1;
+				*(*(animPose + bone)+1) = 0;
+				*(*(animPose + bone)+2) = v2;
+				*(*(animPose + bone)+3) = 0;
+				*(*(animPose + bone)+4) = 0;
+				*(*(animPose + bone)+5) = 0;
+				// cout << "X Y Z " << v1 << " " << 0 << " " << v2 << endl;
+			} else if (df == 6){
+				*(*(animPose + bone)+0) = 0;
+				*(*(animPose + bone)+1) = v1;
+				*(*(animPose + bone)+2) = v2;
+				*(*(animPose + bone)+3) = 0;
+				*(*(animPose + bone)+4) = 0;
+				*(*(animPose + bone)+5) = 0;
+				// cout << "X Y Z " << 0 << " " << v1 << " " << v2 << endl;
+			}
+			break;
+			case 2: 
+			if (df == 1){
+				*(*(animPose + bone)+0) = v1;
+				*(*(animPose + bone)+1) = 0;
+				*(*(animPose + bone)+2) = 0;
+				*(*(animPose + bone)+3) = 0;
+				*(*(animPose + bone)+4) = 0;
+				*(*(animPose + bone)+5) = 0;
+				// cout << "X Y Z " << v1 << " " << 0 << " " << 0 << endl;
+			} else if (df == 2){
+				*(*(animPose + bone)+0) = 0;
+				*(*(animPose + bone)+1) = v1;
+				*(*(animPose + bone)+2) = 0;
+				*(*(animPose + bone)+3) = 0;
+				*(*(animPose + bone)+4) = 0;
+				*(*(animPose + bone)+5) = 0;
+				// cout << "X Y Z " << 0 << " " << v1 << " " << 0 << endl;
+			} else if (df == 4){
+				*(*(animPose + bone)+0) = 0;
+				*(*(animPose + bone)+1) = 0;
+				*(*(animPose + bone)+2) = v1;
+				*(*(animPose + bone)+3) = 0;
+				*(*(animPose + bone)+4) = 0;
+				*(*(animPose + bone)+5) = 0;
+				// cout << "X Y Z " << 0 << " " << 0 << " " << v1 << endl;
+			}
+			break;
+			default: printf("This shit is going seriously wrong %d %s\n", num, name);
+			break;
+		}
+	}
+}
+
+void Skeleton::setRot(int bone, float rotx, float roty, float rotz){
+	root[bone].currentRotationx = rotx;
+	root[bone].currentRotationy = roty;
+	root[bone].currentRotationz = rotz;
+}
+
+void Skeleton::setTrans(float trax, float tray, float traz){
+	root[0].currentTranslatex = trax;
+	root[0].currentTranslatey = tray;
+	root[0].currentTranslatez = traz;
 }
 
 void Skeleton::readACMHeading(FILE* file, int frame){
@@ -304,7 +527,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 				df += (root[bone].dof&DOF_RY);
 				df += (root[bone].dof&DOF_RZ);
 				df += (root[bone].dof&DOF_ROOT);
-				cout << i << " " << j << endl;
 				// cout << "Bone = " << root[bone].name << " " << name << " df = " << df << " " << num << endl;
 				*(*(animRot + i) + bone) = (float*)malloc(sizeof(float) *10);
 				malloc_crash(*(*(animRot + i) + bone));

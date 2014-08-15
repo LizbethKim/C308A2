@@ -41,6 +41,7 @@ int arcball = false;
 int maxY = 0;
 int frames;
 int currFrame = 0;
+int currentPose = 0;
 
 Skeleton* skeleton;
 
@@ -72,7 +73,7 @@ int main(int argc, char** argv) {
 	}
 	skeleton->renderState(1);
 	if (frames > 0){
-		skeleton->animate(0);
+		skeleton->animate(0, 0);
 	}
 
 	glutMainLoop();
@@ -131,20 +132,24 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 		break;
 		case '3': skeleton->renderState(3);
 		break;
-		case 'p': if (frames != 0) {
+		case 'o': if (frames != 0) {
 			G308_timerCallBack(0);
 		} else {
 			cout << "No animation loaded" << endl;
 		}
+		case 'p': skeleton->pose(currentPose);
+		currentPose = (currentPose + 1)%3;
+		skeleton->animate(0, 1);
+		G308_display();
+		break;
 		break;
 	}
 	G308_display();
 }
 
 void G308_timerCallBack (int value){
-	skeleton->animate(value);
+	skeleton->animate(value, 0);
    glutPostRedisplay();
-   cout << value << endl;
    glutTimerFunc (1, G308_timerCallBack, (value + 1)%frames);
 }
 

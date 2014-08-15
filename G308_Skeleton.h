@@ -56,6 +56,7 @@ private:
 	int buffSize, maxBones;
 	bone* root;
 	int numFrames;
+	int poseState;
 	bool readASF(char*);
 	void readHeading(char*, FILE*);
 	void decomment(char*);
@@ -65,20 +66,25 @@ private:
 	void readACMHeading(FILE*, int);
 	void display(bone*, GLUquadric*);
 	DOF dofFromString(char*);
-	void animDisplay(bone*, int);
+	void animDisplay(bone*, int, int);
+	void setRot(int, float, float, float);
+	void setTrans(float, float, float);
 
 public:
 	int numBones;
 	int rS;
 	float ***animRot;
+	float **animPose;
 	float angle;
-	void animate(int);
+	void animate(int, int);
 	Skeleton(char*);
 	~Skeleton();
 	void display();
+	void poseStateSet(int);
 	void readAMC(FILE*,int*);
 	int readACM(char*);
 	void renderState(int);
+	void pose(int);
 };
 
 #endif
