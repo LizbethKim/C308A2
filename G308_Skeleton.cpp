@@ -24,6 +24,8 @@
 #include <cmath>
 #include <unistd.h>
 
+#define malloc_crash(x) if(!x){ printf("could not malloc at %d\n", __LINE__ -1); exit 1; }
+
 
 
 Skeleton::Skeleton(char* filename) {
@@ -291,7 +293,10 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 			break;
 		}
 		for (i = 0; i < frame; i++){
-			*(animRot + i) = (float**)malloc(sizeof(float*) *29);
+			*(animRot + i) = (float**)malloc(sizeof(float*) *32);
+			malloc_crash(*(animRot + i));
+
+			}
 			for (j = 0; j < 29; j++){
 		 		line = fgets(temp, buffSize, file);
 				int num = sscanf(line, "%s %f %f %f %f %f %f", name, &v1, &v2, &v3, &v4, &v5, &v6);
@@ -304,7 +309,8 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 				df += (root[bone].dof&DOF_ROOT);
 				cout << i << " " << j << endl;
 				// cout << "Bone = " << root[bone].name << " " << name << " df = " << df << " " << num << endl;
-				*(*(animRot + i) + bone) = (float*)malloc(sizeof(float) *6);
+				*(*(animRot + i) + bone) = (float*)malloc(sizeof(float) *10);
+				malloc_crash(*(*(animRot + i) + bone);
 
 				switch(num){
 					case 7: *(*(*(animRot + i) + bone)+0) = v4;
