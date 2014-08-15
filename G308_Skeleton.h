@@ -70,7 +70,7 @@ private:
 public:
 	int numBones;
 	int rS;
-	float*** animRot;
+	float ***animRot;
 	float angle;
 	void animate(int);
 	Skeleton(char*);

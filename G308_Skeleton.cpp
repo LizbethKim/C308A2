@@ -238,7 +238,7 @@ int Skeleton::readACM(char* filename){
 	}
 	printf("%d\n", frame);
 	if (fseek(file, 0L, SEEK_SET ) == 0){
-		animRot = malloc(sizeof(float*)*frame);
+		animRot = (float***)malloc(sizeof(float**)*frame);
 		if (animRot == NULL){
 			printf("Memory Allocation FAILED");
 		}
@@ -291,7 +291,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 			break;
 		}
 		for (i = 0; i < frame; i++){
-			*(animRot + i) = malloc(sizeof(float*) *29);
+			*(animRot + i) = (float**)malloc(sizeof(float*) *29);
 			for (j = 0; j < 29; j++){
 		 		line = fgets(temp, buffSize, file);
 				int num = sscanf(line, "%s %f %f %f %f %f %f", name, &v1, &v2, &v3, &v4, &v5, &v6);
@@ -302,8 +302,9 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 				df += (root[bone].dof&DOF_RY);
 				df += (root[bone].dof&DOF_RZ);
 				df += (root[bone].dof&DOF_ROOT);
-				cout << "Bone = " << root[bone].name << " " << name << " df = " << df << " " << num << endl;
-				*(*(animRot + i) + bone) = malloc(sizeof(float) *6);
+				cout << i << " " << j << endl;
+				// cout << "Bone = " << root[bone].name << " " << name << " df = " << df << " " << num << endl;
+				*(*(animRot + i) + bone) = (float*)malloc(sizeof(float) *6);
 
 				switch(num){
 					case 7: *(*(*(animRot + i) + bone)+0) = v4;
@@ -312,7 +313,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 					*(*(*(animRot + i) + bone)+3) = v1;
 					*(*(*(animRot + i) + bone)+4) = v2;
 					*(*(*(animRot + i) + bone)+5) = v3;
-					cout << "X Y Z TX TY TZ " << v4 << " " << v5 << " " << v6 << " " << v1 << " " << v2 << " " << v3 << endl;
+					// cout << "X Y Z TX TY TZ " << v4 << " " << v5 << " " << v6 << " " << v1 << " " << v2 << " " << v3 << endl;
 					break;
 					case 4: *(*(*(animRot + i) + bone)+0) = v1;
 					*(*(*(animRot + i) + bone)+1) = v2;
@@ -320,7 +321,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 					*(*(*(animRot + i) + bone)+3) = 0;
 					*(*(*(animRot + i) + bone)+4) = 0;
 					*(*(*(animRot + i) + bone)+5) = 0;
-					cout << "X Y Z " << v1 << " " << v2 << " " << v3 << endl;
+					// cout << "X Y Z " << v1 << " " << v2 << " " << v3 << endl;
 					break;
 					case 3: 
 					if (df == 3){
@@ -330,7 +331,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						cout << "X Y Z " << v1 << " " << v2 << " " << 0 << endl;
+						// cout << "X Y Z " << v1 << " " << v2 << " " << 0 << endl;
 					} else if (df == 5){
 						*(*(*(animRot + i) + bone)+0) = v1;
 						*(*(*(animRot + i) + bone)+1) = 0;
@@ -338,7 +339,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						cout << "X Y Z " << v1 << " " << 0 << " " << v2 << endl;
+						// cout << "X Y Z " << v1 << " " << 0 << " " << v2 << endl;
 					} else if (df == 6){
 						*(*(*(animRot + i) + bone)+0) = 0;
 						*(*(*(animRot + i) + bone)+1) = v1;
@@ -346,7 +347,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						cout << "X Y Z " << 0 << " " << v1 << " " << v2 << endl;
+						// cout << "X Y Z " << 0 << " " << v1 << " " << v2 << endl;
 					}
 					break;
 					case 2: 
@@ -357,7 +358,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						cout << "X Y Z " << v1 << " " << 0 << " " << 0 << endl;
+						// cout << "X Y Z " << v1 << " " << 0 << " " << 0 << endl;
 					} else if (df == 2){
 						*(*(*(animRot + i) + bone)+0) = 0;
 						*(*(*(animRot + i) + bone)+1) = v1;
@@ -365,7 +366,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						cout << "X Y Z " << 0 << " " << v1 << " " << 0 << endl;
+						// cout << "X Y Z " << 0 << " " << v1 << " " << 0 << endl;
 					} else if (df == 4){
 						*(*(*(animRot + i) + bone)+0) = 0;
 						*(*(*(animRot + i) + bone)+1) = 0;
@@ -373,7 +374,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						cout << "X Y Z " << 0 << " " << 0 << " " << v1 << endl;
+						// cout << "X Y Z " << 0 << " " << 0 << " " << v1 << endl;
 					}
 					break;
 					default: printf("This shit is going seriously wrong %d %s\n", num, name);
