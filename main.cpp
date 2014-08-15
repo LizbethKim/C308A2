@@ -131,7 +131,11 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 		break;
 		case '3': skeleton->renderState(3);
 		break;
-		case 'p': G308_timerCallBack(0);
+		case 'p': if (frames != 0) {
+			G308_timerCallBack(0);
+		} else {
+			cout << "No animation loaded" << endl;
+		}
 		break;
 	}
 	G308_display();
