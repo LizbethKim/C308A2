@@ -116,22 +116,25 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 	}
 	float theta = acos(root->dirz) * 180 / M_PI;
 	if (rS < 4){
+		
 		glPushMatrix();
-		glTranslatef(root->currentTranslatex, root->currentTranslatey, root->currentTranslatez);
-
-		glRotatef(theta, -root->diry, root->dirx, 0);
+		
 		glRotatef(root->rotz, 0, 0, 1.0);
 		glRotatef(root->roty, 0, 1.0, 0);
-		glRotatef(root->rotx, 1.0, 0, 0);
+		glRotatef(root->rotx, 1.0, 0, 0);		
 
 		glRotatef(root->currentRotationz, 0, 0, 1.0);
 		glRotatef(root->currentRotationy, 0, 1.0, 0);
 		glRotatef(root->currentRotationx, 1.0, 0, 0);
-		
+
+		glTranslatef(root->currentTranslatex, root->currentTranslatey, root->currentTranslatez);
+	
 		glRotatef(-root->rotx, 1.0, 0, 0);
 		glRotatef(-root->roty, 0, 1.0, 0);
 		glRotatef(-root->rotz, 0, 0, 1.0);
-		
+
+		glRotatef(theta, -root->diry, root->dirx, 0);
+
 
 		if (rS < 3){
 
@@ -157,12 +160,8 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 				glPopMatrix();
 			}
 		}
-		glRotatef(-theta, -root->diry, root->dirx, 0);
 	}
 
-	theta = acos(root->dirz) * 180 / M_PI;
-
-	glRotatef(theta, -root->diry, root->dirx, 0);
 
 	glColor3f(1,1,1);
 	gluCylinder(q, 0.2, 0.2, root->length, 50, 50);
@@ -170,9 +169,7 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 	glTranslatef(root->dirx*root->length, root->diry*root->length, root->dirz*root->length);
 	int i;
 	for (i = 0; i < root->numChildren; i++){
-		glPushMatrix();
 		display(root->children[i], q);
-		glPopMatrix();
 	}
 	glPopMatrix();
 }
@@ -241,7 +238,7 @@ int Skeleton::readACM(char* filename){
 	}
 	printf("%d\n", frame);
 	if (fseek(file, 0L, SEEK_SET ) == 0){
-		animRot = (float***)malloc(sizeof(float*)*frame);
+		animRot = malloc(sizeof(float*)*frame);
 		if (animRot == NULL){
 			printf("Memory Allocation FAILED");
 		}
@@ -283,9 +280,9 @@ void Skeleton::animDisplay(bone* root, int currFrame) {
 void Skeleton::readACMHeading(FILE* file, int frame){
 	int i, j, q, df;
 	float v1, v2, v3, v4, v5, v6;
-	char* name = new char[buffSize];
+	char name[200];
 	char* temp = new char[buffSize];
-	char* line;
+	char* line = new char[buffSize];
 	while ((line = fgets(temp, buffSize, file))){
  		if (*line == ':') continue;
 		if (*line == '#') continue;
@@ -294,77 +291,89 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 			break;
 		}
 		for (i = 0; i < frame; i++){
-			*(animRot + i) = (float**)malloc(sizeof(float*) *29);
+			*(animRot + i) = malloc(sizeof(float*) *29);
 			for (j = 0; j < 29; j++){
-				df = (root[j].dof&DOF_RX);
-				df += (root[j].dof&DOF_RY);
-				df += (root[j].dof&DOF_RZ);
-				df += (root[j].dof&DOF_ROOT);
-				cout << root[j].name << " " << df << endl;
 		 		line = fgets(temp, buffSize, file);
-				*(*(animRot + i) + j) = (float*)malloc(sizeof(float) *6);
 				int num = sscanf(line, "%s %f %f %f %f %f %f", name, &v1, &v2, &v3, &v4, &v5, &v6);
+
+				int bone = 0;
+				for (bone = 0; strcmp(root[bone].name, name); bone++){}
+				df = (root[bone].dof&DOF_RX);
+				df += (root[bone].dof&DOF_RY);
+				df += (root[bone].dof&DOF_RZ);
+				df += (root[bone].dof&DOF_ROOT);
+				cout << "Bone = " << root[bone].name << " " << name << " df = " << df << " " << num << endl;
+				*(*(animRot + i) + bone) = malloc(sizeof(float) *6);
+
 				switch(num){
-					case 7: *(*(*(animRot + i) + j)+0) = v4;
-					*(*(*(animRot + i) + j)+1) = v5;
-					*(*(*(animRot + i) + j)+2) = v6;
-					*(*(*(animRot + i) + j)+3) = v1;
-					*(*(*(animRot + i) + j)+4) = v2;
-					*(*(*(animRot + i) + j)+5) = v3;
+					case 7: *(*(*(animRot + i) + bone)+0) = v4;
+					*(*(*(animRot + i) + bone)+1) = v5;
+					*(*(*(animRot + i) + bone)+2) = v6;
+					*(*(*(animRot + i) + bone)+3) = v1;
+					*(*(*(animRot + i) + bone)+4) = v2;
+					*(*(*(animRot + i) + bone)+5) = v3;
+					cout << "X Y Z TX TY TZ " << v4 << " " << v5 << " " << v6 << " " << v1 << " " << v2 << " " << v3 << endl;
 					break;
-					case 4: *(*(*(animRot + i) + j)+0) = v1;
-					*(*(*(animRot + i) + j)+1) = v2;
-					*(*(*(animRot + i) + j)+2) = v3;
-					*(*(*(animRot + i) + j)+3) = 0;
-					*(*(*(animRot + i) + j)+4) = 0;
-					*(*(*(animRot + i) + j)+5) = 0;
+					case 4: *(*(*(animRot + i) + bone)+0) = v1;
+					*(*(*(animRot + i) + bone)+1) = v2;
+					*(*(*(animRot + i) + bone)+2) = v3;
+					*(*(*(animRot + i) + bone)+3) = 0;
+					*(*(*(animRot + i) + bone)+4) = 0;
+					*(*(*(animRot + i) + bone)+5) = 0;
+					cout << "X Y Z " << v1 << " " << v2 << " " << v3 << endl;
 					break;
 					case 3: 
 					if (df == 3){
-						*(*(*(animRot + i) + j)+0) = v1;
-						*(*(*(animRot + i) + j)+1) = v2;
-						*(*(*(animRot + i) + j)+2) = 0;
-						*(*(*(animRot + i) + j)+3) = 0;
-						*(*(*(animRot + i) + j)+4) = 0;
-						*(*(*(animRot + i) + j)+5) = 0;
+						*(*(*(animRot + i) + bone)+0) = v1;
+						*(*(*(animRot + i) + bone)+1) = v2;
+						*(*(*(animRot + i) + bone)+2) = 0;
+						*(*(*(animRot + i) + bone)+3) = 0;
+						*(*(*(animRot + i) + bone)+4) = 0;
+						*(*(*(animRot + i) + bone)+5) = 0;
+						cout << "X Y Z " << v1 << " " << v2 << " " << 0 << endl;
 					} else if (df == 5){
-						*(*(*(animRot + i) + j)+0) = v1;
-						*(*(*(animRot + i) + j)+1) = 0;
-						*(*(*(animRot + i) + j)+2) = v2;
-						*(*(*(animRot + i) + j)+3) = 0;
-						*(*(*(animRot + i) + j)+4) = 0;
-						*(*(*(animRot + i) + j)+5) = 0;
+						*(*(*(animRot + i) + bone)+0) = v1;
+						*(*(*(animRot + i) + bone)+1) = 0;
+						*(*(*(animRot + i) + bone)+2) = v2;
+						*(*(*(animRot + i) + bone)+3) = 0;
+						*(*(*(animRot + i) + bone)+4) = 0;
+						*(*(*(animRot + i) + bone)+5) = 0;
+						cout << "X Y Z " << v1 << " " << 0 << " " << v2 << endl;
 					} else if (df == 6){
-						*(*(*(animRot + i) + j)+0) = 0;
-						*(*(*(animRot + i) + j)+1) = v1;
-						*(*(*(animRot + i) + j)+2) = v2;
-						*(*(*(animRot + i) + j)+3) = 0;
-						*(*(*(animRot + i) + j)+4) = 0;
-						*(*(*(animRot + i) + j)+5) = 0;
+						*(*(*(animRot + i) + bone)+0) = 0;
+						*(*(*(animRot + i) + bone)+1) = v1;
+						*(*(*(animRot + i) + bone)+2) = v2;
+						*(*(*(animRot + i) + bone)+3) = 0;
+						*(*(*(animRot + i) + bone)+4) = 0;
+						*(*(*(animRot + i) + bone)+5) = 0;
+						cout << "X Y Z " << 0 << " " << v1 << " " << v2 << endl;
 					}
 					break;
 					case 2: 
 					if (df == 1){
-						*(*(*(animRot + i) + j)+0) = v1;
-						*(*(*(animRot + i) + j)+1) = 0;
-						*(*(*(animRot + i) + j)+2) = 0;
-						*(*(*(animRot + i) + j)+3) = 0;
-						*(*(*(animRot + i) + j)+4) = 0;
-						*(*(*(animRot + i) + j)+5) = 0;
+						*(*(*(animRot + i) + bone)+0) = v1;
+						*(*(*(animRot + i) + bone)+1) = 0;
+						*(*(*(animRot + i) + bone)+2) = 0;
+						*(*(*(animRot + i) + bone)+3) = 0;
+						*(*(*(animRot + i) + bone)+4) = 0;
+						*(*(*(animRot + i) + bone)+5) = 0;
+						cout << "X Y Z " << v1 << " " << 0 << " " << 0 << endl;
 					} else if (df == 2){
-						*(*(*(animRot + i) + j)+0) = 0;
-						*(*(*(animRot + i) + j)+1) = v1;
-						*(*(*(animRot + i) + j)+2) = 0;
-						*(*(*(animRot + i) + j)+3) = 0;
-						*(*(*(animRot + i) + j)+4) = 0;
-						*(*(*(animRot + i) + j)+5) = 0;
+						*(*(*(animRot + i) + bone)+0) = 0;
+						*(*(*(animRot + i) + bone)+1) = v1;
+						*(*(*(animRot + i) + bone)+2) = 0;
+						*(*(*(animRot + i) + bone)+3) = 0;
+						*(*(*(animRot + i) + bone)+4) = 0;
+						*(*(*(animRot + i) + bone)+5) = 0;
+						cout << "X Y Z " << 0 << " " << v1 << " " << 0 << endl;
 					} else if (df == 4){
-						*(*(*(animRot + i) + j)+0) = 0;
-						*(*(*(animRot + i) + j)+1) = 0;
-						*(*(*(animRot + i) + j)+2) = v1;
-						*(*(*(animRot + i) + j)+3) = 0;
-						*(*(*(animRot + i) + j)+4) = 0;
-						*(*(*(animRot + i) + j)+5) = 0;
+						*(*(*(animRot + i) + bone)+0) = 0;
+						*(*(*(animRot + i) + bone)+1) = 0;
+						*(*(*(animRot + i) + bone)+2) = v1;
+						*(*(*(animRot + i) + bone)+3) = 0;
+						*(*(*(animRot + i) + bone)+4) = 0;
+						*(*(*(animRot + i) + bone)+5) = 0;
+						cout << "X Y Z " << 0 << " " << 0 << " " << v1 << endl;
 					}
 					break;
 					default: printf("This shit is going seriously wrong %d %s\n", num, name);
@@ -375,6 +384,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 			q++;
 		}
 	}
+	cout << "Done reading AMC" << endl;
 }
 
 /**
