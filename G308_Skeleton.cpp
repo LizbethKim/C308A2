@@ -22,6 +22,8 @@
 #include "define.h"
 #include <iostream>
 #include <cmath>
+#include <unistd.h>
+
 
 
 Skeleton::Skeleton(char* filename) {
@@ -115,8 +117,13 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 	float theta = acos(root->dirz) * 180 / M_PI;
 	if (rS < 4){
 		glPushMatrix();
+		glTranslatef(root->currentTranslatex, root->currentTranslatey, root->currentTranslatez);
+
+		glRotatef(theta, -root->diry, root->dirx, 0);
+		
+
 		if (rS < 3){
-			glRotatef(theta, -root->diry, root->dirx, 0);
+
 			glColor3f(0, 1, 1);
 			glutSolidSphere(0.4, 100, 100);
 			if (rS < 2){
@@ -137,25 +144,36 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 					glRotatef(-90, 0, 1, 0);
 					gluCylinder(q, 0.1, 0.1, 1, 100, 100);
 				glPopMatrix();
-				glRotatef(-theta, -root->diry, root->dirx, 0);
 			}
 		}
-		glPopMatrix();
+		glRotatef(-theta, -root->diry, root->dirx, 0);
 	}
 
-		glPushMatrix();
-			theta = acos(root->dirz) * 180 / M_PI;
-			glRotatef(theta, -root->diry, root->dirx, 0);
-			glColor3f(1,1,1);
-			gluCylinder(q, 0.2, 0.2, root->length, 50, 50);
-			glRotatef(-theta, -root->diry, root->dirx, 0);
+	theta = acos(root->dirz) * 180 / M_PI;
 
-			glTranslatef(root->dirx*root->length, root->diry*root->length, root->dirz*root->length);
-			int i;
-			for (i = 0; i < root->numChildren; i++){
-				display(root->children[i], q);
-			}
+	glRotatef(theta, -root->diry, root->dirx, 0);
+		glRotatef(root->rotz, 0, 0, 1.0);
+		glRotatef(root->roty, 0, 1.0, 0);
+		glRotatef(root->rotx, 1.0, 0, 0);
+
+		glRotatef(root->currentRotationz, 0, 0, 1.0);
+		glRotatef(root->currentRotationy, 0, 1.0, 0);
+		glRotatef(root->currentRotationx, 1.0, 0, 0);
+		
+		glRotatef(-root->rotx, 1.0, 0, 0);
+		glRotatef(-root->roty, 0, 1.0, 0);
+		glRotatef(-root->rotz, 0, 0, 1.0);
+	glColor3f(1,1,1);
+	gluCylinder(q, 0.2, 0.2, root->length, 50, 50);
+	glRotatef(-theta, -root->diry, root->dirx, 0);
+	glTranslatef(root->dirx*root->length, root->diry*root->length, root->dirz*root->length);
+	int i;
+	for (i = 0; i < root->numChildren; i++){
+		glPushMatrix();
+		display(root->children[i], q);
 		glPopMatrix();
+	}
+	glPopMatrix();
 }
 
 
@@ -197,7 +215,7 @@ bool Skeleton::readASF(char* filename) {
 	return true;
 }
 
-bool Skeleton::readACM(char* filename){
+int Skeleton::readACM(char* filename){
 	FILE* file = fopen(filename, "r");
 	buffSize = 200;
 	if (file == NULL){
@@ -229,9 +247,36 @@ bool Skeleton::readACM(char* filename){
 		readACMHeading(file, frame);
 	} else {
 		printf("Return to start of file failed\n");
-		return false;
+		return 0;
 	}
-	return true;
+	numFrames = frame;
+	return frame;
+}
+
+void Skeleton::animate(int i){
+	animDisplay(root, i);
+	glutPostRedisplay();
+}
+
+void Skeleton::animDisplay(bone* root, int currFrame) {
+	if (root == NULL) {
+		return;
+	}
+	float transX = animRot[currFrame][0][3];
+	float transY = animRot[currFrame][0][4];
+	float transZ = animRot[currFrame][0][5];
+
+	int i;
+
+	root[0].currentTranslatex = transX;
+	root[0].currentTranslatey = transY;
+	root[0].currentTranslatez = transZ;
+	for (i = 0; i < 29; i++){
+		if (animRot[currFrame][i] == NULL) continue;
+		root[i].currentRotationx = animRot[currFrame][i][0];
+		root[i].currentRotationy = animRot[currFrame][i][1];
+		root[i].currentRotationz = animRot[currFrame][i][2];
+	}
 }
 
 void Skeleton::readACMHeading(FILE* file, int frame){
@@ -249,11 +294,12 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 		}
 		for (i = 0; i < frame; i++){
 			*(animRot + i) = (float**)malloc(sizeof(float*) *29);
-			line = fgets(temp, buffSize, file);
-			printf("Dis is the line %s\n", line);
 			for (j = 0; j < 29; j++){
+				int df = (root[i].dof&DOF_RX) *1;
+				df += (root[i].dof&DOF_RY)*2;
+				df += (root[i].dof&DOF_RZ)*4;
+				cout << df << endl;
 		 		line = fgets(temp, buffSize, file);
-		 		printf("Proper line %s", line);
 				*(*(animRot + i) + j) = (float*)malloc(sizeof(float) *6);
 				int num = sscanf(line, "%s %f %f %f %f %f %f", name, &v1, &v2, &v3, &v4, &v5, &v6);
 				switch(num){
@@ -263,25 +309,67 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 					*(*(*(animRot + i) + j)+3) = v1;
 					*(*(*(animRot + i) + j)+4) = v2;
 					*(*(*(animRot + i) + j)+5) = v3;
-					printf("7\n");
 					break;
 					case 4: *(*(*(animRot + i) + j)+0) = v1;
 					*(*(*(animRot + i) + j)+1) = v2;
 					*(*(*(animRot + i) + j)+2) = v3;
-					printf("4\n");
+					*(*(*(animRot + i) + j)+3) = 0;
+					*(*(*(animRot + i) + j)+4) = 0;
+					*(*(*(animRot + i) + j)+5) = 0;
 					break;
-					case 3: *(*(*(animRot + i) + j)+0) = v1;
-					*(*(*(animRot + i) + j)+1) = v2;
-					printf("3\n");
+					case 3: 
+					if (df == 3){
+						*(*(*(animRot + i) + j)+0) = v1;
+						*(*(*(animRot + i) + j)+1) = v2;
+						*(*(*(animRot + i) + j)+2) = 0;
+						*(*(*(animRot + i) + j)+3) = 0;
+						*(*(*(animRot + i) + j)+4) = 0;
+						*(*(*(animRot + i) + j)+5) = 0;
+					} else if (df == 5){
+						*(*(*(animRot + i) + j)+0) = v1;
+						*(*(*(animRot + i) + j)+1) = 0;
+						*(*(*(animRot + i) + j)+2) = v2;
+						*(*(*(animRot + i) + j)+3) = 0;
+						*(*(*(animRot + i) + j)+4) = 0;
+						*(*(*(animRot + i) + j)+5) = 0;
+					} else if (df == 6){
+						*(*(*(animRot + i) + j)+0) = 0;
+						*(*(*(animRot + i) + j)+1) = v1;
+						*(*(*(animRot + i) + j)+2) = v2;
+						*(*(*(animRot + i) + j)+3) = 0;
+						*(*(*(animRot + i) + j)+4) = 0;
+						*(*(*(animRot + i) + j)+5) = 0;
+					}
 					break;
-					case 2: *(*(*(animRot + i) + j)+0) = v1;
-					printf("2\n");
+					case 2: 
+					if (df == 1){
+						*(*(*(animRot + i) + j)+0) = v1;
+						*(*(*(animRot + i) + j)+1) = 0;
+						*(*(*(animRot + i) + j)+2) = 0;
+						*(*(*(animRot + i) + j)+3) = 0;
+						*(*(*(animRot + i) + j)+4) = 0;
+						*(*(*(animRot + i) + j)+5) = 0;
+					} else if (df == 2){
+						*(*(*(animRot + i) + j)+0) = 0;
+						*(*(*(animRot + i) + j)+1) = v1;
+						*(*(*(animRot + i) + j)+2) = 0;
+						*(*(*(animRot + i) + j)+3) = 0;
+						*(*(*(animRot + i) + j)+4) = 0;
+						*(*(*(animRot + i) + j)+5) = 0;
+					} else if (df == 4){
+						*(*(*(animRot + i) + j)+0) = 0;
+						*(*(*(animRot + i) + j)+1) = 0;
+						*(*(*(animRot + i) + j)+2) = v1;
+						*(*(*(animRot + i) + j)+3) = 0;
+						*(*(*(animRot + i) + j)+4) = 0;
+						*(*(*(animRot + i) + j)+5) = 0;
+					}
 					break;
 					default: printf("This shit is going seriously wrong %d %s\n", num, name);
 					break;
 				}
-				printf("i = %d, j = %d, q = %d\n", i, j, q);
 			}
+			line = fgets(temp, buffSize, file);
 			q++;
 		}
 	}

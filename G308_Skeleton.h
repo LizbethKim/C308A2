@@ -55,6 +55,7 @@ class Skeleton {
 private:
 	int buffSize, maxBones;
 	bone* root;
+	int numFrames;
 	bool readASF(char*);
 	void readHeading(char*, FILE*);
 	void decomment(char*);
@@ -64,17 +65,19 @@ private:
 	void readACMHeading(FILE*, int);
 	void display(bone*, GLUquadric*);
 	DOF dofFromString(char*);
+	void animDisplay(bone*, int);
 
 public:
 	int numBones;
 	int rS;
 	float*** animRot;
 	float angle;
+	void animate(int);
 	Skeleton(char*);
 	~Skeleton();
 	void display();
 	void readAMC(FILE*,int*);
-	bool readACM(char*);
+	int readACM(char*);
 	void renderState(int);
 };
 

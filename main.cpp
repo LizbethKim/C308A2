@@ -21,6 +21,7 @@
 #include "define.h"
 #include "G308_Skeleton.h"
 #include <iostream>
+#include <unistd.h>
 
 GLuint g_mainWnd;
 GLuint g_nWinWidth = G308_WIN_WIDTH;
@@ -34,9 +35,12 @@ void G308_SetCamera();
 void G308_SetLight();
 void G308_mouseListener(int, int, int, int);
 void G308_motionListener(int, int);
+void G308_timerCallBack(int);
 int lastX = 0, lastY = 0, curX = 0, curY = 0;
 int arcball = false;
 int maxY = 0;
+int frames;
+int currFrame = 0;
 
 Skeleton* skeleton;
 
@@ -59,18 +63,21 @@ int main(int argc, char** argv) {
 	glutReshapeFunc(G308_Reshape);
 
 	G308_init();
+	frames = 0;
 
 	// [Assignment2] : Read ASF file
 	skeleton = new Skeleton(argv[1]);
 	if (argc == 3){
-		skeleton->readACM(argv[2]);
+		frames = skeleton->readACM(argv[2]);
 	}
 	skeleton->renderState(1);
+	if (frames > 0){
+		skeleton->animate(0);
+	}
 
-	cout << "Gets to here\n" << endl;
-	cout << flush;
 	glutMainLoop();
 
+	free(skeleton);
 	return EXIT_SUCCESS;
 }
 
@@ -124,8 +131,17 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 		break;
 		case '3': skeleton->renderState(3);
 		break;
+		case 'p': G308_timerCallBack(0);
+		break;
 	}
 	G308_display();
+}
+
+void G308_timerCallBack (int value){
+	skeleton->animate(value);
+   glutPostRedisplay();
+   cout << value << endl;
+   glutTimerFunc (1, G308_timerCallBack, (value + 1)%frames);
 }
 
 void G308_mouseListener(int button, int state, int x, int y){
