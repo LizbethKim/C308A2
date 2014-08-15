@@ -120,6 +120,17 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 		glTranslatef(root->currentTranslatex, root->currentTranslatey, root->currentTranslatez);
 
 		glRotatef(theta, -root->diry, root->dirx, 0);
+		glRotatef(root->rotz, 0, 0, 1.0);
+		glRotatef(root->roty, 0, 1.0, 0);
+		glRotatef(root->rotx, 1.0, 0, 0);
+
+		glRotatef(root->currentRotationz, 0, 0, 1.0);
+		glRotatef(root->currentRotationy, 0, 1.0, 0);
+		glRotatef(root->currentRotationx, 1.0, 0, 0);
+		
+		glRotatef(-root->rotx, 1.0, 0, 0);
+		glRotatef(-root->roty, 0, 1.0, 0);
+		glRotatef(-root->rotz, 0, 0, 1.0);
 		
 
 		if (rS < 3){
@@ -152,17 +163,7 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 	theta = acos(root->dirz) * 180 / M_PI;
 
 	glRotatef(theta, -root->diry, root->dirx, 0);
-		glRotatef(root->rotz, 0, 0, 1.0);
-		glRotatef(root->roty, 0, 1.0, 0);
-		glRotatef(root->rotx, 1.0, 0, 0);
 
-		glRotatef(root->currentRotationz, 0, 0, 1.0);
-		glRotatef(root->currentRotationy, 0, 1.0, 0);
-		glRotatef(root->currentRotationx, 1.0, 0, 0);
-		
-		glRotatef(-root->rotx, 1.0, 0, 0);
-		glRotatef(-root->roty, 0, 1.0, 0);
-		glRotatef(-root->rotz, 0, 0, 1.0);
 	glColor3f(1,1,1);
 	gluCylinder(q, 0.2, 0.2, root->length, 50, 50);
 	glRotatef(-theta, -root->diry, root->dirx, 0);
@@ -280,7 +281,7 @@ void Skeleton::animDisplay(bone* root, int currFrame) {
 }
 
 void Skeleton::readACMHeading(FILE* file, int frame){
-	int i, j, q;
+	int i, j, q, df;
 	float v1, v2, v3, v4, v5, v6;
 	char* name = new char[buffSize];
 	char* temp = new char[buffSize];
@@ -295,10 +296,11 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 		for (i = 0; i < frame; i++){
 			*(animRot + i) = (float**)malloc(sizeof(float*) *29);
 			for (j = 0; j < 29; j++){
-				int df = (root[i].dof&DOF_RX) *1;
-				df += (root[i].dof&DOF_RY)*2;
-				df += (root[i].dof&DOF_RZ)*4;
-				cout << df << endl;
+				df = (root[j].dof&DOF_RX);
+				df += (root[j].dof&DOF_RY);
+				df += (root[j].dof&DOF_RZ);
+				df += (root[j].dof&DOF_ROOT);
+				cout << root[j].name << " " << df << endl;
 		 		line = fgets(temp, buffSize, file);
 				*(*(animRot + i) + j) = (float*)malloc(sizeof(float) *6);
 				int num = sscanf(line, "%s %f %f %f %f %f %f", name, &v1, &v2, &v3, &v4, &v5, &v6);
