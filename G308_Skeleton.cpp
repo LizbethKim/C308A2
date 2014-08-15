@@ -241,9 +241,7 @@ int Skeleton::readACM(char* filename){
 	printf("%d\n", frame);
 	if (fseek(file, 0L, SEEK_SET ) == 0){
 		animRot = (float***)malloc(sizeof(float**)*frame);
-		if (animRot == NULL){
-			printf("Memory Allocation FAILED");
-		}
+		malloc_crash(animRot);
 		readACMHeading(file, frame);
 	} else {
 		printf("Return to start of file failed\n");
@@ -296,7 +294,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 			*(animRot + i) = (float**)malloc(sizeof(float*) *32);
 			malloc_crash(*(animRot + i));
 
-			}
 			for (j = 0; j < 29; j++){
 		 		line = fgets(temp, buffSize, file);
 				int num = sscanf(line, "%s %f %f %f %f %f %f", name, &v1, &v2, &v3, &v4, &v5, &v6);
@@ -310,7 +307,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 				cout << i << " " << j << endl;
 				// cout << "Bone = " << root[bone].name << " " << name << " df = " << df << " " << num << endl;
 				*(*(animRot + i) + bone) = (float*)malloc(sizeof(float) *10);
-				malloc_crash(*(*(animRot + i) + bone);
+				malloc_crash(*(*(animRot + i) + bone));
 
 				switch(num){
 					case 7: *(*(*(animRot + i) + bone)+0) = v4;
