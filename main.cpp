@@ -68,11 +68,14 @@ int main(int argc, char** argv) {
 
 	// [Assignment2] : Read ASF file
 	skeleton = new Skeleton(argv[1]);
+	//If an additional argument is given, parse the motion capture file
 	if (argc == 3){
 		frames = skeleton->readACM(argv[2]);
 	}
 	skeleton->renderState(1);
 	if (frames > 0){
+		//If there is motion capture data stored, set animation start point
+		//To frame 0
 		skeleton->animate(0, 0);
 	}
 
@@ -118,6 +121,7 @@ void G308_display() {
 
 void G308_keyboardListener(unsigned char key, int x, int y) {
 	switch (key){
+		//Keyboard turning!
 		case 'a': glRotatef(-5, 0, 1, 0);
 		break;
 		case 'd': glRotatef(5, 0, 1, 0);
@@ -126,17 +130,22 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 		break;
 		case 's': glRotatef(5, 1, 0, 0);
 		break;
+		//Shows everything, bone joints and axis vectors
 		case '1': skeleton->renderState(1);
 		break;
+		//Only shows skeleton and bone joints
 		case '2': skeleton->renderState(2);
 		break;
+		//Only shows skeleton
 		case '3': skeleton->renderState(3);
 		break;
+		//Start motion capture animation
 		case 'o': if (frames != 0) {
 			G308_timerCallBack(0);
 		} else {
 			cout << "No animation loaded" << endl;
 		}
+		//Flip through the poses
 		case 'p': skeleton->pose(currentPose);
 		currentPose = (currentPose + 1)%3;
 		skeleton->animate(0, 1);
@@ -147,12 +156,16 @@ void G308_keyboardListener(unsigned char key, int x, int y) {
 	G308_display();
 }
 
+//Timer function for animation
 void G308_timerCallBack (int value){
-	skeleton->animate(value, 0);
+   skeleton->animate(value, 0);
    glutPostRedisplay();
    glutTimerFunc (1, G308_timerCallBack, (value + 1)%frames);
 }
 
+//Mouse rotations. GLUT has seperate listeners for mouse button presses
+//and mouse movement. This means you have to listen to both seperately.
+//Boolean helps to differentiate when mouse button is held down
 void G308_mouseListener(int button, int state, int x, int y){
 	//0 = Left GLUT_LEFT_BUTTON
 	//1 = Middle GLUT_MIDDLE_BUTTON
@@ -168,6 +181,7 @@ void G308_mouseListener(int button, int state, int x, int y){
 	}
 }
 
+//If button is held down, track the change in mouse movement, and move accordingly
 void G308_motionListener(int x, int y){
 	if (arcball){
 		curX = x;
