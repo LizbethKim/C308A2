@@ -117,9 +117,11 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 		return;
 	}
 	float theta = acos(root->dirz) * 180 / M_PI;
+	//All options enabled, will show bone joints and x, y, z vectors
 	if (rS < 4){		
 		glPushMatrix();
 		
+		//Apply current bone rotations, and translations
 		glRotatef(root->rotz, 0, 0, 1.0);
 		glRotatef(root->roty, 0, 1.0, 0);
 		glRotatef(root->rotx, 1.0, 0, 0);		
@@ -136,11 +138,12 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 
 		glRotatef(theta, -root->diry, root->dirx, 0);
 
-
+		//Drawing the bone joints
 		if (rS < 3){
 
 			glColor3f(0, 1, 1);
 			glutSolidSphere(0.4, 100, 100);
+			//Drawing the bone axis vectors
 			if (rS < 2){
 				glPushMatrix();
 					glColor3f(0,0,1);
@@ -164,11 +167,13 @@ void Skeleton::display(bone* root, GLUquadric* q) {
 	}
 
 
+	//Draw actual bone
 	glColor3f(1,1,1);
 	gluCylinder(q, 0.2, 0.2, root->length, 50, 50);
 	glRotatef(-theta, -root->diry, root->dirx, 0);
 	glTranslatef(root->dirx*root->length, root->diry*root->length, root->dirz*root->length);
 	int i;
+	//Iterate over all children
 	for (i = 0; i < root->numChildren; i++){
 		display(root->children[i], q);
 	}
@@ -220,7 +225,7 @@ int Skeleton::readACM(char* filename){
 	FILE* file = fopen(filename, "r");
 	buffSize = 200;
 	if (file == NULL){
-		printf("STOP BEING A MISERABLE FAILURE AND PUT IN A VALID ACM FILE %s\n", filename);
+		printf("PUT IN A VALID ACM FILE %s\n", filename);
 		exit(EXIT_FAILURE);
 	}
 
@@ -229,6 +234,9 @@ int Skeleton::readACM(char* filename){
 	int frame = 0;
 
 	printf("Starting reading acm file\n");
+	//The very last lone number in a file is the number of frames in
+	//the current motion capture file. This iterates through the file
+	//until reaching that number. Stores in frame
 	while ((p = fgets(buff, buffSize, file)) != NULL){
 		char* start = buff;
 		trim(&start);
@@ -236,10 +244,10 @@ int Skeleton::readACM(char* filename){
 		if (buff[0] == '#' || buff[0] == '\0' || buff[0] == ':'){
 			continue;
 		}
-
 		if(sscanf(start, "%d\b", &frame)){}
 	}
 	printf("%d\n", frame);
+	//Go back to the start of the file, for actual file reading
 	if (fseek(file, 0L, SEEK_SET ) == 0){
 		animRot = (float***)malloc(sizeof(float**)*frame);
 		malloc_crash(animRot);
@@ -261,7 +269,9 @@ void Skeleton::animDisplay(bone* root, int currFrame, int mode) {
 	if (root == NULL) {
 		return;
 	}
+	//Reading in an ACM file
 	if (mode == 0){
+		//Set current root bone translation
 		float transX = animRot[currFrame][0][3];
 		float transY = animRot[currFrame][0][4];
 		float transZ = animRot[currFrame][0][5];
@@ -273,10 +283,12 @@ void Skeleton::animDisplay(bone* root, int currFrame, int mode) {
 		root[0].currentTranslatez = transZ;
 		for (i = 0; i < 29; i++){
 			if (animRot[currFrame][i] == NULL) continue;
+			//For every bone, insert the current rotation values into the x,y,z
 			root[i].currentRotationx = animRot[currFrame][i][0];
 			root[i].currentRotationy = animRot[currFrame][i][1];
 			root[i].currentRotationz = animRot[currFrame][i][2];
 		}
+	//For custom poses, only 3 possibilities, rest same as above
 	} else if (mode == 1){
 		float transX = animPose[0][3];
 		float transY = animPose[0][4];
@@ -301,6 +313,7 @@ void Skeleton::pose(int pose){
 	int j, df;
 	float v1, v2, v3, v4, v5, v6;
 	char name[200];
+	//Manual addition of 3 individual poses from motion capture files
 	switch (pose){
 		case 0:
 		poseFile[0] = "root -0.00368816 16.2109 0.900333 -7.83816 17.0395 -3.03423";
@@ -402,23 +415,26 @@ void Skeleton::pose(int pose){
 		int num = sscanf(poseLine, "%s %f %f %f %f %f %f", name, &v1, &v2, &v3, &v4, &v5, &v6);
 
 		int bone = 0;
+		//Iterate until bone name is the same as the name read in
 		for (bone = 0; strcmp(root[bone].name, name); bone++){}
+		//Bit unpacking to figure out bone degrees of freedom
 		df = (root[bone].dof&DOF_RX);
 		df += (root[bone].dof&DOF_RY);
 		df += (root[bone].dof&DOF_RZ);
 		df += (root[bone].dof&DOF_ROOT);
-		// cout << "Bone = " << root[bone].name << " " << name << " df = " << df << " " << num << endl;
 		*(animPose + bone) = (float*)malloc(sizeof(float) *10);
 		malloc_crash(*(animPose + bone));
 
+		//REMINDER TO SELF: USE VECTORS NEXT TIME
 		switch(num){
+			//Only ever the root bone
 			case 7: *(*(animPose + bone)+0) = v4;
 				*(*(animPose + bone)+1) = v5;
 				*(*(animPose + bone)+2) = v6;
 				*(*(animPose + bone)+3) = v1;
 				*(*(animPose + bone)+4) = v2;
 				*(*(animPose + bone)+5) = v3;
-			// cout << "X Y Z TX TY TZ " << v4 << " " << v5 << " " << v6 << " " << v1 << " " << v2 << " " << v3 << endl;
+			//A joint with 3 degrees of freedom doesn't need special consideration
 			break;
 			case 4: *(*(animPose+ bone)+0) = v1;
 				*(*(animPose + bone)+1) = v2;
@@ -426,7 +442,7 @@ void Skeleton::pose(int pose){
 				*(*(animPose + bone)+3) = 0;
 				*(*(animPose + bone)+4) = 0;
 				*(*(animPose + bone)+5) = 0;
-			// cout << "X Y Z " << v1 << " " << v2 << " " << v3 << endl;
+			//Depending on the bitpacked value for Degrees of Freedom, different angles need to be read
 			break;
 			case 3: 
 			if (df == 3){
@@ -436,7 +452,6 @@ void Skeleton::pose(int pose){
 				*(*(animPose + bone)+3) = 0;
 				*(*(animPose + bone)+4) = 0;
 				*(*(animPose + bone)+5) = 0;
-				// cout << "X Y Z " << v1 << " " << v2 << " " << 0 << endl;
 			} else if (df == 5){
 				*(*(animPose + bone)+0) = v1;
 				*(*(animPose + bone)+1) = 0;
@@ -444,7 +459,6 @@ void Skeleton::pose(int pose){
 				*(*(animPose + bone)+3) = 0;
 				*(*(animPose + bone)+4) = 0;
 				*(*(animPose + bone)+5) = 0;
-				// cout << "X Y Z " << v1 << " " << 0 << " " << v2 << endl;
 			} else if (df == 6){
 				*(*(animPose + bone)+0) = 0;
 				*(*(animPose + bone)+1) = v1;
@@ -452,7 +466,6 @@ void Skeleton::pose(int pose){
 				*(*(animPose + bone)+3) = 0;
 				*(*(animPose + bone)+4) = 0;
 				*(*(animPose + bone)+5) = 0;
-				// cout << "X Y Z " << 0 << " " << v1 << " " << v2 << endl;
 			}
 			break;
 			case 2: 
@@ -463,7 +476,6 @@ void Skeleton::pose(int pose){
 				*(*(animPose + bone)+3) = 0;
 				*(*(animPose + bone)+4) = 0;
 				*(*(animPose + bone)+5) = 0;
-				// cout << "X Y Z " << v1 << " " << 0 << " " << 0 << endl;
 			} else if (df == 2){
 				*(*(animPose + bone)+0) = 0;
 				*(*(animPose + bone)+1) = v1;
@@ -471,7 +483,6 @@ void Skeleton::pose(int pose){
 				*(*(animPose + bone)+3) = 0;
 				*(*(animPose + bone)+4) = 0;
 				*(*(animPose + bone)+5) = 0;
-				// cout << "X Y Z " << 0 << " " << v1 << " " << 0 << endl;
 			} else if (df == 4){
 				*(*(animPose + bone)+0) = 0;
 				*(*(animPose + bone)+1) = 0;
@@ -479,10 +490,9 @@ void Skeleton::pose(int pose){
 				*(*(animPose + bone)+3) = 0;
 				*(*(animPose + bone)+4) = 0;
 				*(*(animPose + bone)+5) = 0;
-				// cout << "X Y Z " << 0 << " " << 0 << " " << v1 << endl;
 			}
 			break;
-			default: printf("This shit is going seriously wrong %d %s\n", num, name);
+			default: printf("This is going seriously wrong %d %s\n", num, name);
 			break;
 		}
 	}
@@ -500,6 +510,8 @@ void Skeleton::setTrans(float trax, float tray, float traz){
 	root[0].currentTranslatez = traz;
 }
 
+//This method is the same as above, should've condensed into one method that
+//could work for both
 void Skeleton::readACMHeading(FILE* file, int frame){
 	int i, j, q, df;
 	float v1, v2, v3, v4, v5, v6;
@@ -510,7 +522,7 @@ void Skeleton::readACMHeading(FILE* file, int frame){
  		if (*line == ':') continue;
 		if (*line == '#') continue;
 		if (line == NULL) {
-			printf("Some serious shit going on here\n");
+			printf("Something serious going on here\n");
 			break;
 		}
 		for (i = 0; i < frame; i++){
@@ -527,7 +539,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 				df += (root[bone].dof&DOF_RY);
 				df += (root[bone].dof&DOF_RZ);
 				df += (root[bone].dof&DOF_ROOT);
-				// cout << "Bone = " << root[bone].name << " " << name << " df = " << df << " " << num << endl;
 				*(*(animRot + i) + bone) = (float*)malloc(sizeof(float) *10);
 				malloc_crash(*(*(animRot + i) + bone));
 
@@ -538,7 +549,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 					*(*(*(animRot + i) + bone)+3) = v1;
 					*(*(*(animRot + i) + bone)+4) = v2;
 					*(*(*(animRot + i) + bone)+5) = v3;
-					// cout << "X Y Z TX TY TZ " << v4 << " " << v5 << " " << v6 << " " << v1 << " " << v2 << " " << v3 << endl;
 					break;
 					case 4: *(*(*(animRot + i) + bone)+0) = v1;
 					*(*(*(animRot + i) + bone)+1) = v2;
@@ -546,7 +556,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 					*(*(*(animRot + i) + bone)+3) = 0;
 					*(*(*(animRot + i) + bone)+4) = 0;
 					*(*(*(animRot + i) + bone)+5) = 0;
-					// cout << "X Y Z " << v1 << " " << v2 << " " << v3 << endl;
 					break;
 					case 3: 
 					if (df == 3){
@@ -556,7 +565,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						// cout << "X Y Z " << v1 << " " << v2 << " " << 0 << endl;
 					} else if (df == 5){
 						*(*(*(animRot + i) + bone)+0) = v1;
 						*(*(*(animRot + i) + bone)+1) = 0;
@@ -564,7 +572,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						// cout << "X Y Z " << v1 << " " << 0 << " " << v2 << endl;
 					} else if (df == 6){
 						*(*(*(animRot + i) + bone)+0) = 0;
 						*(*(*(animRot + i) + bone)+1) = v1;
@@ -572,7 +579,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						// cout << "X Y Z " << 0 << " " << v1 << " " << v2 << endl;
 					}
 					break;
 					case 2: 
@@ -583,7 +589,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						// cout << "X Y Z " << v1 << " " << 0 << " " << 0 << endl;
 					} else if (df == 2){
 						*(*(*(animRot + i) + bone)+0) = 0;
 						*(*(*(animRot + i) + bone)+1) = v1;
@@ -591,7 +596,6 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						// cout << "X Y Z " << 0 << " " << v1 << " " << 0 << endl;
 					} else if (df == 4){
 						*(*(*(animRot + i) + bone)+0) = 0;
 						*(*(*(animRot + i) + bone)+1) = 0;
@@ -599,10 +603,9 @@ void Skeleton::readACMHeading(FILE* file, int frame){
 						*(*(*(animRot + i) + bone)+3) = 0;
 						*(*(*(animRot + i) + bone)+4) = 0;
 						*(*(*(animRot + i) + bone)+5) = 0;
-						// cout << "X Y Z " << 0 << " " << 0 << " " << v1 << endl;
 					}
 					break;
-					default: printf("This shit is going seriously wrong %d %s\n", num, name);
+					default: printf("This is going seriously wrong %d %s\n", num, name);
 					break;
 				}
 			}
